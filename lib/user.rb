@@ -1,4 +1,3 @@
-class User< ActiveRecord::Base
+class User < ActiveRecord::Base
 	validates_presence_of :username, :wins
-
 end
