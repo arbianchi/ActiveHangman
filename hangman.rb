@@ -16,6 +16,7 @@ def filter_dict db
 end
 def choose_word words
 	words.sample.split("")
+	return "foo".split("")#FOR TESTING
 end
 def print_board guessbox
 	puts
@@ -29,6 +30,12 @@ def get_guess
 	entry = gets.chomp
 	return entry
 end
+
+def save_game game, player
+	game.save
+	player.save
+end
+
 def is_invalid guess, prevguess
 	if guess.to_i.to_s == guess || guess.length > 1
 
@@ -93,41 +100,50 @@ while play
 	if player.wins == nil
 		player.wins = 0
 	end
-	
+
 	puts "Your current score is #{player.wins}." 
+	#	if Game.where(username:user)
+	#		game = Game.where(username:user)
+	#else
 	splitword = choose_word filter_dict "dictwords.txt"
 	guessbox = Array.new(splitword.length, " _ ")
 	prevguess = []
 	guesses = 5
 	print_board guessbox
 	game = Game.create!(username:user,answer_word:splitword.to_json,guessbox:guessbox,guesses_left:guesses,prevguesses:prevguess.to_json,status:'u')
+until guesses == 0 || guessbox.include?(" _ ") == false do
 
-	until guesses == 0 || guessbox.include?(" _ ") == false do
-
-		unknownleft = guessbox.count " _ "
-		guess = get_guess
-
-		unless is_invalid guess, prevguess
-
-			valid_entry splitword, guess, guessbox
-			guesses = decrement_attempts guesses, guessbox, unknownleft
-			print_board guessbox
-			show_previous_guesses prevguess, guess
-			game.guessbox = guessbox
-			game.guesses_left = guesses
-			game.prevguesses = prevguess.to_json
-		end
+	unknownleft = guessbox.count " _ "
+	guess = get_guess
+	if guess == "save"
+		game.save
+		player.save
+		binding.pry
+		exit
 	end
 
-	result = outcome splitword, guessbox
-	if result 
-		game.status = 'y'
-		player.wins += 1 
-	else
-		game.status = 'n'
+	unless is_invalid guess, prevguess
+
+		valid_entry splitword, guess, guessbox
+		guesses = decrement_attempts guesses, guessbox, unknownleft
+		print_board guessbox
+		show_previous_guesses prevguess, guess
+		game.guessbox = guessbox
+		game.guesses_left = guesses
+		game.prevguesses = prevguess.to_json
+		game.save
 	end
-	player.save
-	game.save
-	play = play_again
+end
+
+result = outcome splitword, guessbox
+if result 
+	game.status = 'y'
+	player.wins += 1 
+else
+	game.status = 'n'
+end
+player.save
+game.save
+play = play_again
 
 end
